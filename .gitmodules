@@ -1,0 +1,3 @@
+[submodule "lens-agent"]
+	path = lens-agent
+	url = https://github.com/melodic-lab/lens-agent.git
