@@ -1,0 +1,967 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CinePilot 工作流规划 — 9天冲刺</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700;900&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0a0a0f;
+  --surface: #14141f;
+  --surface2: #1c1c2e;
+  --border: #2a2a40;
+  --text: #e8e8f0;
+  --text-dim: #8888a0;
+  --yj: #ff6b4a;
+  --yj-bg: rgba(255,107,74,0.12);
+  --jy: #4ae0ff;
+  --jy-bg: rgba(74,224,255,0.12);
+  --dt: #b44aff;
+  --dt-bg: rgba(180,74,255,0.12);
+  --all: #ffc44a;
+  --all-bg: rgba(255,196,74,0.12);
+  --accent: #4aff8b;
+  --danger: #ff4a6b;
+}
+
+* { margin:0; padding:0; box-sizing:border-box; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Noto Sans SC', sans-serif;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+.hero {
+  padding: 48px 48px 24px;
+  position: relative;
+  overflow: hidden;
+}
+
+.hero::before {
+  content: '';
+  position: absolute;
+  top: -120px; right: -120px;
+  width: 400px; height: 400px;
+  background: radial-gradient(circle, rgba(74,224,255,0.08) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+.hero h1 {
+  font-size: 42px;
+  font-weight: 900;
+  letter-spacing: -1px;
+  background: linear-gradient(135deg, var(--yj), var(--jy), var(--dt));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  margin-bottom: 8px;
+}
+
+.hero .subtitle {
+  font-family: 'Space Mono', monospace;
+  font-size: 14px;
+  color: var(--text-dim);
+  letter-spacing: 2px;
+}
+
+.meta-bar {
+  display: flex;
+  gap: 32px;
+  padding: 16px 48px;
+  border-bottom: 1px solid var(--border);
+  font-size: 13px;
+}
+
+.meta-item { display: flex; align-items: center; gap: 8px; }
+.meta-item .dot { width: 8px; height: 8px; border-radius: 50%; }
+.meta-item .label { color: var(--text-dim); }
+.meta-item .value { font-weight: 700; }
+
+.legend {
+  display: flex;
+  gap: 24px;
+  padding: 20px 48px;
+  flex-wrap: wrap;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.legend-color {
+  width: 14px; height: 14px;
+  border-radius: 3px;
+}
+
+/* ---- GANTT ---- */
+.gantt-wrapper {
+  padding: 0 48px 32px;
+  overflow-x: auto;
+}
+
+.gantt {
+  min-width: 900px;
+  position: relative;
+}
+
+.gantt-header {
+  display: grid;
+  grid-template-columns: 260px repeat(9, 1fr);
+  border-bottom: 2px solid var(--border);
+  padding-bottom: 8px;
+  margin-bottom: 4px;
+}
+
+.gantt-header .col-label {
+  font-family: 'Space Mono', monospace;
+  font-size: 12px;
+  color: var(--text-dim);
+  text-align: center;
+  padding: 4px 0;
+}
+
+.gantt-header .col-label.today {
+  color: var(--accent);
+  font-weight: 700;
+  position: relative;
+}
+
+.gantt-header .col-task {
+  font-size: 12px;
+  color: var(--text-dim);
+  font-weight: 500;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+
+.gantt-section {
+  margin-bottom: 12px;
+}
+
+.gantt-section-header {
+  display: grid;
+  grid-template-columns: 260px 1fr;
+  align-items: center;
+  padding: 10px 0 6px;
+}
+
+.section-owner {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 700;
+  font-size: 15px;
+}
+
+.section-owner .avatar {
+  width: 28px; height: 28px;
+  border-radius: 6px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 12px; font-weight: 900;
+  color: #fff;
+}
+
+.gantt-row {
+  display: grid;
+  grid-template-columns: 260px repeat(9, 1fr);
+  align-items: center;
+  min-height: 36px;
+  position: relative;
+}
+
+.gantt-row:hover { background: rgba(255,255,255,0.02); border-radius: 4px; }
+
+.row-label {
+  font-size: 13px;
+  padding-left: 38px;
+  color: var(--text);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.row-label .priority {
+  font-size: 10px;
+  padding: 1px 5px;
+  border-radius: 3px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+}
+
+.priority.p0 { background: rgba(255,74,107,0.2); color: var(--danger); }
+.priority.p1 { background: rgba(255,196,74,0.2); color: var(--all); }
+.priority.p2 { background: rgba(136,136,160,0.2); color: var(--text-dim); }
+
+.bar-cell {
+  position: relative;
+  height: 24px;
+}
+
+.bar {
+  position: absolute;
+  top: 2px;
+  height: 20px;
+  border-radius: 4px;
+  opacity: 0.85;
+  transition: opacity 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  font-weight: 700;
+  color: rgba(255,255,255,0.7);
+  letter-spacing: 0.5px;
+}
+
+.bar:hover { opacity: 1; }
+
+.bar.yj  { background: linear-gradient(90deg, var(--yj), #ff8f4a); left: 0; right: 0; }
+.bar.jy  { background: linear-gradient(90deg, var(--jy), #4ab0ff); left: 0; right: 0; }
+.bar.dt  { background: linear-gradient(90deg, var(--dt), #d074ff); left: 0; right: 0; }
+.bar.all { background: linear-gradient(90deg, var(--all), #ffe04a); left: 0; right: 0; color: rgba(0,0,0,0.5); }
+
+.milestone {
+  position: absolute;
+  top: 4px;
+  width: 16px; height: 16px;
+  transform: rotate(45deg);
+  border-radius: 2px;
+  left: calc(50% - 8px);
+}
+
+.milestone.yj  { background: var(--yj); }
+.milestone.jy  { background: var(--jy); }
+.milestone.dt  { background: var(--dt); }
+.milestone.all { background: var(--all); }
+
+/* ---- TABLE ---- */
+.table-section {
+  padding: 32px 48px;
+}
+
+.table-section h2 {
+  font-size: 22px;
+  font-weight: 700;
+  margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.table-section h2 .icon { font-size: 18px; }
+
+table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  font-size: 13px;
+}
+
+thead th {
+  background: var(--surface2);
+  padding: 10px 14px;
+  text-align: left;
+  font-weight: 600;
+  font-size: 12px;
+  letter-spacing: 0.5px;
+  color: var(--text-dim);
+  border-bottom: 1px solid var(--border);
+  position: sticky;
+  top: 0;
+  z-index: 2;
+}
+
+thead th:first-child { border-radius: 8px 0 0 0; }
+thead th:last-child { border-radius: 0 8px 0 0; }
+
+tbody td {
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--border);
+  vertical-align: top;
+}
+
+tbody tr:hover { background: rgba(255,255,255,0.02); }
+
+.tag {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.tag.yj  { background: var(--yj-bg); color: var(--yj); }
+.tag.jy  { background: var(--jy-bg); color: var(--jy); }
+.tag.dt  { background: var(--dt-bg); color: var(--dt); }
+.tag.all { background: var(--all-bg); color: var(--all); }
+
+.status {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.status .dot {
+  width: 7px; height: 7px;
+  border-radius: 50%;
+}
+
+.status.done .dot { background: var(--accent); }
+.status.wip .dot { background: var(--all); }
+.status.todo .dot { background: var(--text-dim); }
+
+/* ---- RISK ---- */
+.risk-section {
+  padding: 0 48px 48px;
+}
+
+.risk-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 16px;
+}
+
+.risk-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 20px;
+  transition: border-color 0.2s;
+}
+
+.risk-card:hover { border-color: var(--danger); }
+
+.risk-card h4 {
+  font-size: 14px;
+  font-weight: 700;
+  margin-bottom: 8px;
+  color: var(--danger);
+}
+
+.risk-card p {
+  font-size: 12px;
+  color: var(--text-dim);
+  line-height: 1.6;
+}
+
+/* today line */
+.today-line {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: var(--accent);
+  opacity: 0.4;
+  z-index: 1;
+  pointer-events: none;
+}
+
+@media (max-width: 768px) {
+  .hero, .meta-bar, .legend, .gantt-wrapper, .table-section, .risk-section {
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+  .hero h1 { font-size: 28px; }
+}
+</style>
+</head>
+<body>
+
+<div class="hero">
+  <h1>CinePilot 冲刺规划</h1>
+  <div class="subtitle">9-DAY SPRINT &middot; 2026.04.01 — 2026.04.09</div>
+</div>
+
+<div class="meta-bar">
+  <div class="meta-item">
+    <div class="dot" style="background:var(--accent)"></div>
+    <span class="label">总工期</span>
+    <span class="value">9 天</span>
+  </div>
+  <div class="meta-item">
+    <div class="dot" style="background:var(--yj)"></div>
+    <span class="label">里程碑</span>
+    <span class="value">4 个</span>
+  </div>
+  <div class="meta-item">
+    <div class="dot" style="background:var(--jy)"></div>
+    <span class="label">核心任务</span>
+    <span class="value">19 项</span>
+  </div>
+  <div class="meta-item">
+    <div class="dot" style="background:var(--dt)"></div>
+    <span class="label">成员</span>
+    <span class="value">3 人</span>
+  </div>
+</div>
+
+<div class="legend">
+  <div class="legend-item"><div class="legend-color" style="background:var(--yj)"></div>YJ — 意图识别 + 商业展示</div>
+  <div class="legend-item"><div class="legend-color" style="background:var(--jy)"></div>JY — Skills/Tools + Agentic Flow</div>
+  <div class="legend-item"><div class="legend-color" style="background:var(--dt)"></div>DT — 镜头轨迹生成</div>
+  <div class="legend-item"><div class="legend-color" style="background:var(--all)"></div>全员 — 联调/评审</div>
+</div>
+
+<!-- ===== GANTT CHART ===== -->
+<div class="gantt-wrapper">
+<div class="gantt">
+
+<div class="gantt-header">
+  <div class="col-task">任务</div>
+  <div class="col-label today">4/1 二</div>
+  <div class="col-label">4/2 三</div>
+  <div class="col-label">4/3 四</div>
+  <div class="col-label">4/4 五</div>
+  <div class="col-label">4/5 六</div>
+  <div class="col-label">4/6 日</div>
+  <div class="col-label">4/7 一</div>
+  <div class="col-label">4/8 二</div>
+  <div class="col-label">4/9 三</div>
+</div>
+
+<!-- ===== YJ ===== -->
+<div class="gantt-section">
+  <div class="gantt-section-header">
+    <div class="section-owner">
+      <div class="avatar" style="background:var(--yj)">YJ</div>
+      YJ — 意图识别 + 商业展示
+    </div>
+  </div>
+
+  <div class="gantt-row">
+    <div class="row-label"><span class="priority p0">P0</span>定义镜头语义标签体系</div>
+    <div class="bar-cell"><div class="bar yj">D1</div></div>
+    <div class="bar-cell"><div class="bar yj">D2</div></div>
+    <div class="bar-cell"></div><div class="bar-cell"></div><div class="bar-cell"></div>
+    <div class="bar-cell"></div><div class="bar-cell"></div><div class="bar-cell"></div><div class="bar-cell"></div>
+  </div>
+
+  <div class="gantt-row">
+    <div class="row-label"><span class="priority p0">P0</span>NL Parser 增强 + Prompt</div>
+    <div class="bar-cell"></div>
+    <div class="bar-cell"><div class="bar yj">D2</div></div>
+    <div class="bar-cell"><div class="bar yj">D3</div></div>
+    <div class="bar-cell"><div class="bar yj">D4</div></div>
+    <div class="bar-cell"></div>
+    <div class="bar-cell"></div><div class="bar-cell"></div><div class="bar-cell"></div><div class="bar-cell"></div>
+  </div>
+
+  <div class="gantt-row">
+    <div class="row-label"><span class="priority p1">P1</span>意图→CameraIntent 测试集</div>
+    <div class="bar-cell"></div><div class="bar-cell"></div><div class="bar-cell"></div>
+    <div class="bar-cell"><div class="bar yj">D4</div></div>
+    <div class="bar-cell"><div class="bar yj">D5</div></div>
+    <div class="bar-cell"></div><div class="bar-cell"></div><div class="bar-cell"></div><div class="bar-cell"></div>
+  </div>
+
+  <div class="gantt-row">
+    <div class="row-label"><span class="priority p0">P0</span>比赛 PPT / Demo 脚本</div>
+    <div class="bar-cell"></div><div class="bar-cell"></div><div class="bar-cell"></div><div class="bar-cell"></div>
+    <div class="bar-cell"></div>
+    <div class="bar-cell"><div class="bar yj">D6</div></div>
+    <div class="bar-cell"><div class="bar yj">D7</div></div>
+    <div class="bar-cell"></div><div class="bar-cell"></div>
+  </div>
+
+  <div class="gantt-row">
+    <div class="row-label"><span class="priority p0">P0</span>Demo 视频录制 + 演讲排练</div>
+    <div class="bar-cell"></div><div class="bar-cell"></div><div class="bar-cell"></div><div class="bar-cell"></div>
+    <div class="bar-cell"></div><div class="bar-cell"></div>
+    <div class="bar-cell"><div class="bar yj">D7</div></div>
+    <div class="bar-cell"><div class="bar yj">D8</div></div>
+    <div class="bar-cell"><div class="bar yj">D9</div></div>
+  </div>
+</div>
+
+<!-- ===== JY ===== -->
+<div class="gantt-section">
+  <div class="gantt-section-header">
+    <div class="section-owner">
+      <div class="avatar" style="background:var(--jy)">JY</div>
+      JY — Skills/Tools + Agentic Flow
+    </div>
+  </div>
+
+  <div class="gantt-row">
+    <div class="row-label"><span class="priority p0">P0</span>LLM Tool Schema 定义</div>
+    <div class="bar-cell"><div class="bar jy">D1</div></div>
+    <div class="bar-cell"><div class="bar jy">D2</div></div>
+    <div class="bar-cell"></div><div class="bar-cell"></div><div class="bar-cell"></div>
+    <div class="bar-cell"></div><div class="bar-cell"></div><div class="bar-cell"></div><div class="bar-cell"></div>
+  </div>
+
+  <div class="gantt-row">
+    <div class="row-label"><span class="priority p0">P0</span>Agentic Flow 框架搭建</div>
+    <div class="bar-cell"></div>
+    <div class="bar-cell"><div class="bar jy">D2</div></div>
+    <div class="bar-cell"><div class="bar jy">D3</div></div>
+    <div class="bar-cell"><div class="bar jy">D4</div></div>
+    <div class="bar-cell"></div>
+    <div class="bar-cell"></div><div class="bar-cell"></div><div class="bar-cell"></div><div class="bar-cell"></div>
+  </div>
+
+  <div class="gantt-row">
+    <div class="row-label"><span class="priority p0">P0</span>NL→Intent→Path 链路集成</div>
+    <div class="bar-cell"></div><div class="bar-cell"></div><div class="bar-cell"></div>
+    <div class="bar-cell"><div class="bar jy">D4</div></div>
+    <div class="bar-cell"><div class="bar jy">D5</div></div>
+    <div class="bar-cell"></div><div class="bar-cell"></div><div class="bar-cell"></div><div class="bar-cell"></div>
+  </div>
+
+  <div class="gantt-row">
+    <div class="row-label"><span class="priority p1">P1</span>FastAPI 服务端 + SSE</div>
+    <div class="bar-cell"></div><div class="bar-cell"></div><div class="bar-cell"></div><div class="bar-cell"></div>
+    <div class="bar-cell"><div class="bar jy">D5</div></div>
+    <div class="bar-cell"><div class="bar jy">D6</div></div>
+    <div class="bar-cell"></div><div class="bar-cell"></div><div class="bar-cell"></div>
+  </div>
+
+  <div class="gantt-row">
+    <div class="row-label"><span class="priority p1">P1</span>端到端测试 + Bug Fix</div>
+    <div class="bar-cell"></div><div class="bar-cell"></div><div class="bar-cell"></div><div class="bar-cell"></div>
+    <div class="bar-cell"></div>
+    <div class="bar-cell"><div class="bar jy">D6</div></div>
+    <div class="bar-cell"><div class="bar jy">D7</div></div>
+    <div class="bar-cell"><div class="bar jy">D8</div></div>
+    <div class="bar-cell"></div>
+  </div>
+
+  <div class="gantt-row">
+    <div class="row-label"><span class="priority p2">P2</span>文档 + 演示环境部署</div>
+    <div class="bar-cell"></div><div class="bar-cell"></div><div class="bar-cell"></div><div class="bar-cell"></div>
+    <div class="bar-cell"></div><div class="bar-cell"></div><div class="bar-cell"></div>
+    <div class="bar-cell"><div class="bar jy">D8</div></div>
+    <div class="bar-cell"><div class="bar jy">D9</div></div>
+  </div>
+</div>
+
+<!-- ===== DT ===== -->
+<div class="gantt-section">
+  <div class="gantt-section-header">
+    <div class="section-owner">
+      <div class="avatar" style="background:var(--dt)">DT</div>
+      DT — 镜头路径轨迹
+    </div>
+  </div>
+
+  <div class="gantt-row">
+    <div class="row-label"><span class="priority p0">P0</span>镜头运动类型调研 + 数学建模</div>
+    <div class="bar-cell"><div class="bar dt">D1</div></div>
+    <div class="bar-cell"><div class="bar dt">D2</div></div>
+    <div class="bar-cell"></div><div class="bar-cell"></div><div class="bar-cell"></div>
+    <div class="bar-cell"></div><div class="bar-cell"></div><div class="bar-cell"></div><div class="bar-cell"></div>
+  </div>
+
+  <div class="gantt-row">
+    <div class="row-label"><span class="priority p0">P0</span>Planner 重写 (Orbit/Dolly/Crane)</div>
+    <div class="bar-cell"></div>
+    <div class="bar-cell"><div class="bar dt">D2</div></div>
+    <div class="bar-cell"><div class="bar dt">D3</div></div>
+    <div class="bar-cell"><div class="bar dt">D4</div></div>
+    <div class="bar-cell"></div>
+    <div class="bar-cell"></div><div class="bar-cell"></div><div class="bar-cell"></div><div class="bar-cell"></div>
+  </div>
+
+  <div class="gantt-row">
+    <div class="row-label"><span class="priority p0">P0</span>Bezier/Spline 平滑插值</div>
+    <div class="bar-cell"></div><div class="bar-cell"></div><div class="bar-cell"></div>
+    <div class="bar-cell"><div class="bar dt">D4</div></div>
+    <div class="bar-cell"><div class="bar dt">D5</div></div>
+    <div class="bar-cell"></div><div class="bar-cell"></div><div class="bar-cell"></div><div class="bar-cell"></div>
+  </div>
+
+  <div class="gantt-row">
+    <div class="row-label"><span class="priority p1">P1</span>Subject-Aware 路径自适应</div>
+    <div class="bar-cell"></div><div class="bar-cell"></div><div class="bar-cell"></div><div class="bar-cell"></div>
+    <div class="bar-cell"><div class="bar dt">D5</div></div>
+    <div class="bar-cell"><div class="bar dt">D6</div></div>
+    <div class="bar-cell"></div><div class="bar-cell"></div><div class="bar-cell"></div>
+  </div>
+
+  <div class="gantt-row">
+    <div class="row-label"><span class="priority p1">P1</span>3DGS Splat 渲染适配</div>
+    <div class="bar-cell"></div><div class="bar-cell"></div><div class="bar-cell"></div><div class="bar-cell"></div>
+    <div class="bar-cell"></div>
+    <div class="bar-cell"><div class="bar dt">D6</div></div>
+    <div class="bar-cell"><div class="bar dt">D7</div></div>
+    <div class="bar-cell"></div><div class="bar-cell"></div>
+  </div>
+
+  <div class="gantt-row">
+    <div class="row-label"><span class="priority p2">P2</span>路径可视化调试工具</div>
+    <div class="bar-cell"></div><div class="bar-cell"></div><div class="bar-cell"></div><div class="bar-cell"></div>
+    <div class="bar-cell"></div><div class="bar-cell"></div>
+    <div class="bar-cell"><div class="bar dt">D7</div></div>
+    <div class="bar-cell"><div class="bar dt">D8</div></div>
+    <div class="bar-cell"></div>
+  </div>
+</div>
+
+<!-- ===== 全员 ===== -->
+<div class="gantt-section">
+  <div class="gantt-section-header">
+    <div class="section-owner">
+      <div class="avatar" style="background:var(--all);color:#000">ALL</div>
+      全员 — 里程碑 / 联调
+    </div>
+  </div>
+
+  <div class="gantt-row">
+    <div class="row-label"><span class="priority p0">P0</span>M1: 接口对齐会议</div>
+    <div class="bar-cell"></div>
+    <div class="bar-cell"><div class="milestone all" title="M1: 接口Schema对齐"></div></div>
+    <div class="bar-cell"></div><div class="bar-cell"></div><div class="bar-cell"></div>
+    <div class="bar-cell"></div><div class="bar-cell"></div><div class="bar-cell"></div><div class="bar-cell"></div>
+  </div>
+
+  <div class="gantt-row">
+    <div class="row-label"><span class="priority p0">P0</span>M2: 首次端到端联调</div>
+    <div class="bar-cell"></div><div class="bar-cell"></div><div class="bar-cell"></div><div class="bar-cell"></div>
+    <div class="bar-cell"><div class="milestone all" title="M2: 首次E2E联调"></div></div>
+    <div class="bar-cell"></div><div class="bar-cell"></div><div class="bar-cell"></div><div class="bar-cell"></div>
+  </div>
+
+  <div class="gantt-row">
+    <div class="row-label"><span class="priority p0">P0</span>M3: Feature Freeze</div>
+    <div class="bar-cell"></div><div class="bar-cell"></div><div class="bar-cell"></div><div class="bar-cell"></div>
+    <div class="bar-cell"></div><div class="bar-cell"></div>
+    <div class="bar-cell"><div class="milestone all" title="M3: 功能冻结"></div></div>
+    <div class="bar-cell"></div><div class="bar-cell"></div>
+  </div>
+
+  <div class="gantt-row">
+    <div class="row-label"><span class="priority p0">P0</span>M4: 最终提交 / 比赛</div>
+    <div class="bar-cell"></div><div class="bar-cell"></div><div class="bar-cell"></div><div class="bar-cell"></div>
+    <div class="bar-cell"></div><div class="bar-cell"></div><div class="bar-cell"></div><div class="bar-cell"></div>
+    <div class="bar-cell"><div class="milestone all" title="M4: 最终提交"></div></div>
+  </div>
+</div>
+
+</div><!-- /gantt -->
+</div><!-- /gantt-wrapper -->
+
+<!-- ===== DETAILED TABLE ===== -->
+<div class="table-section">
+  <h2>飞书多维表格数据（可直接复制）</h2>
+  <table>
+    <thead>
+      <tr>
+        <th style="width:40px">#</th>
+        <th style="width:80px">负责人</th>
+        <th style="width:260px">任务名称</th>
+        <th style="width:60px">优先级</th>
+        <th style="width:80px">开始日期</th>
+        <th style="width:80px">结束日期</th>
+        <th style="width:50px">天数</th>
+        <th style="width:80px">状态</th>
+        <th>前置依赖</th>
+        <th>交付物</th>
+      </tr>
+    </thead>
+    <tbody>
+      <!-- YJ tasks -->
+      <tr>
+        <td>1</td>
+        <td><span class="tag yj">YJ</span></td>
+        <td>定义镜头语义标签体系（正面/侧面/俯拍等）</td>
+        <td><span class="priority p0">P0</span></td>
+        <td>4/1</td><td>4/2</td><td>2</td>
+        <td><span class="status wip"><span class="dot"></span>进行中</span></td>
+        <td>—</td>
+        <td>label_map.json + 文档</td>
+      </tr>
+      <tr>
+        <td>2</td>
+        <td><span class="tag yj">YJ</span></td>
+        <td>NL Parser 增强 + LLM Prompt 工程</td>
+        <td><span class="priority p0">P0</span></td>
+        <td>4/2</td><td>4/4</td><td>3</td>
+        <td><span class="status todo"><span class="dot"></span>待开始</span></td>
+        <td>#1</td>
+        <td>nl_parser.py 升级</td>
+      </tr>
+      <tr>
+        <td>3</td>
+        <td><span class="tag yj">YJ</span></td>
+        <td>意图识别测试集（20+ case）</td>
+        <td><span class="priority p1">P1</span></td>
+        <td>4/4</td><td>4/5</td><td>2</td>
+        <td><span class="status todo"><span class="dot"></span>待开始</span></td>
+        <td>#2</td>
+        <td>test_cases.json + 准确率报告</td>
+      </tr>
+      <tr>
+        <td>4</td>
+        <td><span class="tag yj">YJ</span></td>
+        <td>比赛 PPT + Demo 脚本编写</td>
+        <td><span class="priority p0">P0</span></td>
+        <td>4/6</td><td>4/7</td><td>2</td>
+        <td><span class="status todo"><span class="dot"></span>待开始</span></td>
+        <td>M2 联调完成</td>
+        <td>PPT + 演示流程稿</td>
+      </tr>
+      <tr>
+        <td>5</td>
+        <td><span class="tag yj">YJ</span></td>
+        <td>Demo 视频录制 + 演讲排练</td>
+        <td><span class="priority p0">P0</span></td>
+        <td>4/7</td><td>4/9</td><td>3</td>
+        <td><span class="status todo"><span class="dot"></span>待开始</span></td>
+        <td>#4, M3</td>
+        <td>demo.mp4 + 排练记录</td>
+      </tr>
+
+      <!-- JY tasks -->
+      <tr>
+        <td>6</td>
+        <td><span class="tag jy">JY</span></td>
+        <td>LLM Tool Schema 定义 (parse/solve/pipeline)</td>
+        <td><span class="priority p0">P0</span></td>
+        <td>4/1</td><td>4/2</td><td>2</td>
+        <td><span class="status wip"><span class="dot"></span>进行中</span></td>
+        <td>—</td>
+        <td>tool schemas + registry 升级</td>
+      </tr>
+      <tr>
+        <td>7</td>
+        <td><span class="tag jy">JY</span></td>
+        <td>Agentic Flow 框架搭建 (LangGraph/自定义)</td>
+        <td><span class="priority p0">P0</span></td>
+        <td>4/2</td><td>4/4</td><td>3</td>
+        <td><span class="status todo"><span class="dot"></span>待开始</span></td>
+        <td>#6</td>
+        <td>agent orchestrator 代码</td>
+      </tr>
+      <tr>
+        <td>8</td>
+        <td><span class="tag jy">JY</span></td>
+        <td>NL → Intent → Path 全链路集成</td>
+        <td><span class="priority p0">P0</span></td>
+        <td>4/4</td><td>4/5</td><td>2</td>
+        <td><span class="status todo"><span class="dot"></span>待开始</span></td>
+        <td>#2, #7, #10</td>
+        <td>集成测试通过</td>
+      </tr>
+      <tr>
+        <td>9</td>
+        <td><span class="tag jy">JY</span></td>
+        <td>FastAPI 服务端 + SSE 推流</td>
+        <td><span class="priority p1">P1</span></td>
+        <td>4/5</td><td>4/6</td><td>2</td>
+        <td><span class="status todo"><span class="dot"></span>待开始</span></td>
+        <td>#8</td>
+        <td>server.py + API 文档</td>
+      </tr>
+      <tr>
+        <td>10</td>
+        <td><span class="tag jy">JY</span></td>
+        <td>端到端测试 + Bug 修复</td>
+        <td><span class="priority p1">P1</span></td>
+        <td>4/6</td><td>4/8</td><td>3</td>
+        <td><span class="status todo"><span class="dot"></span>待开始</span></td>
+        <td>#9</td>
+        <td>E2E 测试报告</td>
+      </tr>
+      <tr>
+        <td>11</td>
+        <td><span class="tag jy">JY</span></td>
+        <td>文档整理 + 演示环境部署</td>
+        <td><span class="priority p2">P2</span></td>
+        <td>4/8</td><td>4/9</td><td>2</td>
+        <td><span class="status todo"><span class="dot"></span>待开始</span></td>
+        <td>#10</td>
+        <td>README + 部署脚本</td>
+      </tr>
+
+      <!-- DT tasks -->
+      <tr>
+        <td>12</td>
+        <td><span class="tag dt">DT</span></td>
+        <td>镜头运动类型调研 + 数学建模</td>
+        <td><span class="priority p0">P0</span></td>
+        <td>4/1</td><td>4/2</td><td>2</td>
+        <td><span class="status wip"><span class="dot"></span>进行中</span></td>
+        <td>—</td>
+        <td>运动类型文档 + 公式推导</td>
+      </tr>
+      <tr>
+        <td>13</td>
+        <td><span class="tag dt">DT</span></td>
+        <td>Planner 重写 (Orbit/Dolly/Crane/Push)</td>
+        <td><span class="priority p0">P0</span></td>
+        <td>4/2</td><td>4/4</td><td>3</td>
+        <td><span class="status todo"><span class="dot"></span>待开始</span></td>
+        <td>#1, #12</td>
+        <td>planner.py 重构</td>
+      </tr>
+      <tr>
+        <td>14</td>
+        <td><span class="tag dt">DT</span></td>
+        <td>Bezier/Spline 平滑路径插值</td>
+        <td><span class="priority p0">P0</span></td>
+        <td>4/4</td><td>4/5</td><td>2</td>
+        <td><span class="status todo"><span class="dot"></span>待开始</span></td>
+        <td>#13</td>
+        <td>smooth CameraPath 输出</td>
+      </tr>
+      <tr>
+        <td>15</td>
+        <td><span class="tag dt">DT</span></td>
+        <td>Subject-Aware 路径自适应</td>
+        <td><span class="priority p1">P1</span></td>
+        <td>4/5</td><td>4/6</td><td>2</td>
+        <td><span class="status todo"><span class="dot"></span>待开始</span></td>
+        <td>#14</td>
+        <td>framing 集成路径</td>
+      </tr>
+      <tr>
+        <td>16</td>
+        <td><span class="tag dt">DT</span></td>
+        <td>3DGS Splat 渲染适配器</td>
+        <td><span class="priority p1">P1</span></td>
+        <td>4/6</td><td>4/7</td><td>2</td>
+        <td><span class="status todo"><span class="dot"></span>待开始</span></td>
+        <td>#14</td>
+        <td>splat adapter 实现</td>
+      </tr>
+      <tr>
+        <td>17</td>
+        <td><span class="tag dt">DT</span></td>
+        <td>路径可视化调试工具</td>
+        <td><span class="priority p2">P2</span></td>
+        <td>4/7</td><td>4/8</td><td>2</td>
+        <td><span class="status todo"><span class="dot"></span>待开始</span></td>
+        <td>#14</td>
+        <td>可视化 HTML/3D viewer</td>
+      </tr>
+
+      <!-- Milestones -->
+      <tr style="background:var(--all-bg)">
+        <td>M1</td>
+        <td><span class="tag all">全员</span></td>
+        <td>接口对齐会议 (CameraIntent/Path Schema)</td>
+        <td><span class="priority p0">P0</span></td>
+        <td>4/2</td><td>4/2</td><td>0.5</td>
+        <td><span class="status todo"><span class="dot"></span>待开始</span></td>
+        <td>#1, #6, #12</td>
+        <td>对齐文档 + Schema 定稿</td>
+      </tr>
+      <tr style="background:var(--all-bg)">
+        <td>M2</td>
+        <td><span class="tag all">全员</span></td>
+        <td>首次端到端联调 (NL→Path→Frames)</td>
+        <td><span class="priority p0">P0</span></td>
+        <td>4/5</td><td>4/5</td><td>1</td>
+        <td><span class="status todo"><span class="dot"></span>待开始</span></td>
+        <td>#2, #8, #14</td>
+        <td>E2E 通路验证</td>
+      </tr>
+      <tr style="background:var(--all-bg)">
+        <td>M3</td>
+        <td><span class="tag all">全员</span></td>
+        <td>Feature Freeze — 功能冻结</td>
+        <td><span class="priority p0">P0</span></td>
+        <td>4/7</td><td>4/7</td><td>0.5</td>
+        <td><span class="status todo"><span class="dot"></span>待开始</span></td>
+        <td>M2</td>
+        <td>冻结分支 tag</td>
+      </tr>
+      <tr style="background:var(--all-bg)">
+        <td>M4</td>
+        <td><span class="tag all">全员</span></td>
+        <td>最终提交 / 比赛展示</td>
+        <td><span class="priority p0">P0</span></td>
+        <td>4/9</td><td>4/9</td><td>1</td>
+        <td><span class="status todo"><span class="dot"></span>待开始</span></td>
+        <td>M3, #5</td>
+        <td>提交包 + 展示</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- ===== RISK ===== -->
+<div class="risk-section">
+  <h2 style="font-size:22px;font-weight:700;margin-bottom:20px;padding:0 0 0 0">风险评估与缓冲策略</h2>
+  <div class="risk-cards">
+    <div class="risk-card">
+      <h4>Splat 渲染适配风险</h4>
+      <p>当前 SplatRenderAdapter 是 stub，若 3DGS 渲染无法在 D6-D7 跑通，<strong>降级方案</strong>：使用 GLTF 软件渲染 (Tesla 示例已通) 做 Demo，保留 Splat 接口。</p>
+    </div>
+    <div class="risk-card">
+      <h4>NL 解析精度不足</h4>
+      <p>复杂镜头描述的意图识别可能不够准确。<strong>缓冲</strong>：D4-D5 留有测试集打磨时间；最坏情况用预设模板 + 下拉选择替代纯 NL。</p>
+    </div>
+    <div class="risk-card">
+      <h4>Agent Flow 集成复杂度</h4>
+      <p>LangGraph 或自定义 Agent 编排可能遇到状态管理和错误恢复问题。<strong>缓冲</strong>：JY 在 D4 前完成框架；如果 LangGraph 不稳定，退回到简单的 Chain 模式。</p>
+    </div>
+    <div class="risk-card">
+      <h4>联调窗口紧张</h4>
+      <p>M2 (4/5) 是关键里程碑，三人模块第一次合流。<strong>建议</strong>：4/2 对齐接口 Schema 后，每天 15 分钟 stand-up 同步阻塞点。</p>
+    </div>
+  </div>
+</div>
+
+<!-- ===== COPY HELPER ===== -->
+<div class="table-section" style="padding-top:0">
+  <h2>飞书复制格式（TSV）</h2>
+  <p style="font-size:13px;color:var(--text-dim);margin-bottom:12px">点击下方按钮，直接粘贴到飞书多维表格中</p>
+  <button id="copyBtn" style="
+    background: linear-gradient(135deg, var(--jy), var(--dt));
+    border: none; color: #fff; padding: 10px 24px;
+    border-radius: 8px; font-size: 14px; font-weight: 700;
+    cursor: pointer; transition: transform 0.1s;
+  " onmousedown="this.style.transform='scale(0.97)'" onmouseup="this.style.transform='scale(1)'">
+    复制 TSV 到剪贴板
+  </button>
+  <span id="copyStatus" style="margin-left:12px;font-size:13px;color:var(--accent);opacity:0;transition:opacity 0.3s"></span>
+</div>
+
+<div style="height:48px"></div>
+
+<script>
+const TSV = `编号\t负责人\t任务名称\t优先级\t开始日期\t结束日期\t天数\t状态\t前置依赖\t交付物
+1\tYJ\t定义镜头语义标签体系（正面/侧面/俯拍等）\tP0\t4/1\t4/2\t2\t进行中\t—\tlabel_map.json + 文档
+2\tYJ\tNL Parser 增强 + LLM Prompt 工程\tP0\t4/2\t4/4\t3\t待开始\t#1\tnl_parser.py 升级
+3\tYJ\t意图识别测试集（20+ case）\tP1\t4/4\t4/5\t2\t待开始\t#2\ttest_cases.json + 准确率报告
+4\tYJ\t比赛 PPT + Demo 脚本编写\tP0\t4/6\t4/7\t2\t待开始\tM2 联调完成\tPPT + 演示流程稿
+5\tYJ\tDemo 视频录制 + 演讲排练\tP0\t4/7\t4/9\t3\t待开始\t#4, M3\tdemo.mp4 + 排练记录
+6\tJY\tLLM Tool Schema 定义 (parse/solve/pipeline)\tP0\t4/1\t4/2\t2\t进行中\t—\ttool schemas + registry 升级
+7\tJY\tAgentic Flow 框架搭建 (LangGraph/自定义)\tP0\t4/2\t4/4\t3\t待开始\t#6\tagent orchestrator 代码
+8\tJY\tNL → Intent → Path 全链路集成\tP0\t4/4\t4/5\t2\t待开始\t#2, #7, #10\t集成测试通过
+9\tJY\tFastAPI 服务端 + SSE 推流\tP1\t4/5\t4/6\t2\t待开始\t#8\tserver.py + API 文档
+10\tJY\t端到端测试 + Bug 修复\tP1\t4/6\t4/8\t3\t待开始\t#9\tE2E 测试报告
+11\tJY\t文档整理 + 演示环境部署\tP2\t4/8\t4/9\t2\t待开始\t#10\tREADME + 部署脚本
+12\tDT\t镜头运动类型调研 + 数学建模\tP0\t4/1\t4/2\t2\t进行中\t—\t运动类型文档 + 公式推导
+13\tDT\tPlanner 重写 (Orbit/Dolly/Crane/Push)\tP0\t4/2\t4/4\t3\t待开始\t#1, #12\tplanner.py 重构
+14\tDT\tBezier/Spline 平滑路径插值\tP0\t4/4\t4/5\t2\t待开始\t#13\tsmooth CameraPath 输出
+15\tDT\tSubject-Aware 路径自适应\tP1\t4/5\t4/6\t2\t待开始\t#14\tframing 集成路径
+16\tDT\t3DGS Splat 渲染适配器\tP1\t4/6\t4/7\t2\t待开始\t#14\tsplat adapter 实现
+17\tDT\t路径可视化调试工具\tP2\t4/7\t4/8\t2\t待开始\t#14\t可视化 HTML/3D viewer
+M1\t全员\t接口对齐会议 (CameraIntent/Path Schema)\tP0\t4/2\t4/2\t0.5\t待开始\t#1, #6, #12\t对齐文档 + Schema 定稿
+M2\t全员\t首次端到端联调 (NL→Path→Frames)\tP0\t4/5\t4/5\t1\t待开始\t#2, #8, #14\tE2E 通路验证
+M3\t全员\tFeature Freeze — 功能冻结\tP0\t4/7\t4/7\t0.5\t待开始\tM2\t冻结分支 tag
+M4\t全员\t最终提交 / 比赛展示\tP0\t4/9\t4/9\t1\t待开始\tM3, #5\t提交包 + 展示`;
+
+document.getElementById('copyBtn').addEventListener('click', () => {
+  navigator.clipboard.writeText(TSV).then(() => {
+    const s = document.getElementById('copyStatus');
+    s.textContent = '已复制！';
+    s.style.opacity = '1';
+    setTimeout(() => s.style.opacity = '0', 2000);
+  });
+});
+</script>
+
+</body>
+</html>
